@@ -112,7 +112,7 @@ foreach my $file (@ARGV) {
     print STDERR "$progname: processing $file with Minimac3 (prefix for output files: $prefix)";
     system($minimac,
         "--cpus", $cpus,
-        "--refHaps", "$file",
+        "--refHaps", $file,
         "--processReference",
         "--prefix", $prefix,
         "--lowMemory") == 0 or die "Minimac3 processing failed; aborting";
