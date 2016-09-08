@@ -109,10 +109,10 @@ foreach my $file (@ARGV) {
     print STDERR "$progname: indexing $file_bgz";
     system($tabix, "-f", $file_bgz) == 0 or die "Indexing failed; aborting";
 
-    print STDERR "$progname: processing $file with Minimac3 (prefix for output files: $prefix)";
+    print STDERR "$progname: processing $file_bgz with Minimac3 (prefix for output files: $prefix)";
     system($minimac,
         "--cpus", $cpus,
-        "--refHaps", $file,
+        "--refHaps", $file_bgz,
         "--processReference",
         "--prefix", $prefix,
         "--lowMemory") == 0 or die "Minimac3 processing failed; aborting";
