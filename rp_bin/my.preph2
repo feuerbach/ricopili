@@ -139,10 +139,12 @@ if ($eagle_vcf) {
 
     my $tabix = trans("tabixloc") . "/tabix";
 
+    # NOTE: the temporary name is 'unphased0' because Eagle itself writes a file
+    # out.unphased.vcf.gz
     $sys_loc = qq{
-      { $p2loc/plink --bfile "$inname" --recode vcf-iid bgz --out "$outname.unphased" &&
-        $tabix -f "$outname.unphased.vcf.gz" &&
-        $ealoc/$eagle_bin --vcfRef "$ref" --vcfTarget "$outname.unphased.vcf.gz" --geneticMapFile=$gemafile --outPrefix=$outname $multi_txt
+      { $p2loc/plink --bfile "$inname" --recode vcf-iid bgz --out "$outname.unphased0" &&
+        $tabix -f "$outname.unphased0.vcf.gz" &&
+        $ealoc/$eagle_bin --vcfRef "$ref" --vcfTarget "$outname.unphased0.vcf.gz" --geneticMapFile=$gemafile --outPrefix=$outname $multi_txt
       } > $outname.log 2> $outname.loge
     };
 }
