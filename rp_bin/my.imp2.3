@@ -25,14 +25,16 @@ my $buff = 1000;
 my $usage = "
 Usage : my.imp2 --out OUTNAME --in INNAME --ref REFFILE --gema GEMAFILE
 
- --out STRING      name of out file
- --in STRING       name of haps file 
+ --out STRING      name of out file, or output prefix for Minimac3
+ --in STRING       name of haps file, or vcf file for Minimac3
  --gema STRING     gema-file
- --reffile STRING  name of ref file
+ --reffile STRING  name of ref file; for Minimac3, a processed (m3vcf) version is recommended
  --refstart INT    Mb of start
  --refend INT      Mb of end
  --chrX STRING     for X chromosome, noting sample-file
  --buff INT        buffer, default $buff
+ --minimac         perform the imputation using Minimac3
+ --chr             chromosome number; required for Minimac3
 ";
 
 my $outname = "";
@@ -53,9 +55,11 @@ GetOptions(
     "refend=s"=> \ $refend,
     "buff=i"=> \ $buff,
     "chrX=s"=> \my $chrx,
+    "minimac"=> \my $minimac,
+    "chr=i"=> \my $chr,
     );
 
-if ($outname eq "" || $inname eq ""  || $gemafile eq "" || $reffile eq "" || $refstart eq ""|| $refend eq ""){
+if ($outname eq "" || $inname eq ""  || (!$minimac && $gemafile eq "") || $reffile eq "" || $refstart eq ""|| $refend eq "" || ($minimac && $chr == 0)){
     print "$usage\n";
     print "$outname\n";
     print "$inname\n";
@@ -67,6 +71,9 @@ if ($outname eq "" || $inname eq ""  || $gemafile eq "" || $reffile eq "" || $re
     die;
 }
 
+if ($minimac and $reffile !~ /m3vcf/) {
+  warn "$0: using an un-processed reference file. This will be much slower than using a processed one (.m3vcf.gz)\n";
+}
 
 unless (-e "$inname") {
     if (-e "$inname.haps.gz"){
@@ -96,7 +103,7 @@ if (-e "$outname.fini") {
 ##############################
 
 my $allow_str = "";
-my $start_loc = $refstart *1.0e06;
+my $start_loc = $refstart == 0 ? 1 : $refstart *1.0e06; # Minimac3 doesn't accept 0 for --start
 my $end_loc =  $refend *1.0e06;
 
 
@@ -116,7 +123,23 @@ if ($refend - $refstart > 6) {
 }
 
 
-my $sys_loc = "$i2loc/$imp2_bin -o_gz -seed 1234567 $xtxt -m $gemafile -h $reffile.hap.gz -l $reffile.legend.gz -known_haps_g $inname -int $start_loc $end_loc -Ne 20000 -buffer $buff -o $outname $allow_str";
+my $sys_loc;
+if ($minimac) {
+  $sys_loc = qq{
+    Minimac3 \\
+    --refHaps "$reffile" \\
+    --format DS,GT,GP \\
+    --haps "$inname" \\
+    --prefix "$outname" \\
+    --start "$start_loc" \\
+    --end "$end_loc" \\
+    --window "$buff" \\
+    --chr "$chr" \\
+    --lowMemory
+  };
+} else {
+  $sys_loc = "$i2loc/$imp2_bin -o_gz -seed 1234567 $xtxt -m $gemafile -h $reffile.hap.gz -l $reffile.legend.gz -known_haps_g $inname -int $start_loc $end_loc -Ne 20000 -buffer $buff -o $outname $allow_str";
+}
 
 ## for now without best guess
 #my $sys_loc = "$i2loc/$imp2_bin -phase -seed 1234567 $xtxt -m $gemafile -h $reffile.hap.gz -l $reffile.legend.gz -known_haps_g $inname -int $start_loc $end_loc -Ne 20000 -buffer 1000 -o $outname $allow_str";
