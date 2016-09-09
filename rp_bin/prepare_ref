@@ -14,7 +14,7 @@ my $cpus = 1;
 
 GetOptions( 
     "help" => \my $help,
-    "cpus" => \$cpus,
+    "cpus=i" => \$cpus,
     );
 
 
